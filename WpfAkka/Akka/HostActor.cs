@@ -32,7 +32,6 @@ internal class HostActor : ReceiveActor
 
         Receive<UserLoggingIn>(msg => Context.ActorSelection(_authActorPath).Tell(msg));
         Receive<UserLoggingOut>(msg => Context.ActorSelection(_authActorPath).Tell(msg));
-     
         Receive<PatientOpenedInEMR>(OnPatientOpened);
     }
 

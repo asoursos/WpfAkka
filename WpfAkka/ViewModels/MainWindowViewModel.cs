@@ -34,6 +34,7 @@ internal partial class HostViewModel : ObservableObject
         Scenarios = new ObservableCollection<ScenarioViewModel>
             {
                 new ScenarioViewModel(Scenario.UserLoggingIn),
+                new ScenarioViewModel(Scenario.UserLoggingOut),
                 new ScenarioViewModel(Scenario.ProviderOpensPatient),
                 new ScenarioViewModel(Scenario.ProviderOpens10DifferentPatients),
                 new ScenarioViewModel(Scenario.ProviderOpens100DifferentPatients)
@@ -71,6 +72,9 @@ internal partial class HostViewModel : ObservableObject
         {
             case Scenario.UserLoggingIn:
                 yield return new UserLoggingIn();
+                break;
+            case Scenario.UserLoggingOut:
+                yield return new UserLoggingOut();
                 break;
             case Scenario.ProviderOpensPatient:
                 yield return new PatientOpenedInEMR();

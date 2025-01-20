@@ -136,7 +136,6 @@
                     </CheckBox>
                 </Grid>
                 
-                
                 <TextBlock Grid.Column="1" Text="Scenario" VerticalAlignment="Center" Margin="5"/>
 
                 <Grid Grid.Row="1" Grid.Column="1" >
