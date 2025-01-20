@@ -9,6 +9,7 @@ internal static class AkkaSystem
     #region [ Initialize ]
     private static readonly ActorSystem RootSystem = BuildSystem();
     private static Dictionary<int, string> PluginAddresses = [];
+    private static ActorPath _hostActorPath;
 
     private static ActorSystem BuildSystem()
     {
@@ -30,32 +31,25 @@ internal static class AkkaSystem
         return ActorSystem.Create("RootSystem", config);
     }
 
-    public static void Initialize(IEnumerable<PluginViewModel> plugins)
+    public static void Initialize(HostViewModel viewModel)
     {
-        foreach (var item in plugins)
-        {
-            IActorRef pluginActor = RootSystem.ActorOf(Props.Create(() => new PluginActor(item)), PluginActor.BuildName(item.Id));
-            PluginAddresses[item.Id] = pluginActor.Path.ToString();
-        }
+        IActorRef hostActor = RootSystem.ActorOf(Props.Create(() => new HostActor(viewModel)), HostActor.HostActorName);
+        _hostActorPath = hostActor.Path;
     }
     #endregion
 
     #region [ Use ]
     public static ActorSystem Instance => RootSystem;
 
-    public static void Send(object message, int? pluginId)
+    public static void Send(object message)
     {
-        if (pluginId.HasValue)
+        if (_hostActorPath == null)
         {
-            var path = PluginActor.BuildPath(pluginId.Value);
-            var actor = RootSystem.ActorSelection(path);
-            actor.Tell(message);
-            return;
+            throw new Exception("Akka system has not being initialized.");
         }
 
-        // broadcast to all plugins
-        var selection = RootSystem.ActorSelection(PluginActor.BuildPath());
-        selection.Tell(message);
+        // send to host.
+        RootSystem.ActorSelection(_hostActorPath).Tell(message);
     }
     #endregion
 }

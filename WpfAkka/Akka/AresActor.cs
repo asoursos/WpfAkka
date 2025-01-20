@@ -1,26 +1,25 @@
 ﻿using Akka.Actor;
 using Akka.Event;
-using System.Windows.Threading;
-using WpfAkka.Models;
+using WpfAkka.Models.Messages;
 using WpfAkka.ViewModels;
 
 namespace WpfAkka.Actors;
 
-internal class PluginActor : ReceiveActor
+internal class AresActor : ReceiveActor
 {
     // https://getakka.net/articles/actors/dispatchers.html 
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
-    private readonly PluginViewModel _viewModel;
+    private readonly AresViewModel _viewModel;
 
     internal static string BuildName(int id) => $"plugin-{id}";
     internal static string BuildPath(int? id = null) => id.HasValue ? $"/user/plugin-{id}" : $"/user/plugin-*";
 
-    public PluginActor(PluginViewModel viewModel)
+    public AresActor(AresViewModel viewModel)
     {
         _viewModel = viewModel;
 
-        Receive((Action<PatientContextChanged>)(message =>
+        Receive((Action<PatientOpenedInEMR>)(message =>
         {
             _log.Debug($"Received 'message:{message.Id}'");
 

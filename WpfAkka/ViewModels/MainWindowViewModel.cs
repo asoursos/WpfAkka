@@ -5,35 +5,50 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using WpfAkka.Actors;
-using WpfAkka.Models;
+using WpfAkka.Models.Messages;
 
 namespace WpfAkka.ViewModels;
 
-internal partial class MainWindowViewModel : ObservableObject
+internal partial class HostViewModel : ObservableObject
 {
-    public ObservableCollection<PluginViewModel> Plugins { get; internal set; } = new ObservableCollection<PluginViewModel>();
+    public ObservableCollection<AresViewModel> Plugins { get; internal set; } = new ObservableCollection<AresViewModel>();
     public ObservableCollection<ScenarioViewModel> Scenarios { get; internal set; } = new ObservableCollection<ScenarioViewModel>();
 
     public KeyValuePair<int,string>? SelectedPlugin { get; set; }
     public ScenarioViewModel? SelectedScenario { get; set; }
 
     [ObservableProperty]
-    private IDictionary<int, string> pluginSelections;
+    private AuthViewModel authViewModel;
 
-    public MainWindowViewModel()
+    [ObservableProperty]
+    private AresViewModel aresViewModel;
+
+    [ObservableProperty]
+    private ToastViewModel toastViewModel;
+
+    [ObservableProperty]
+    private bool isMainWindowOpened;
+
+    public HostViewModel()
     {
+        Scenarios = new ObservableCollection<ScenarioViewModel>
+            {
+                new ScenarioViewModel(Scenario.UserLoggingIn),
+                new ScenarioViewModel(Scenario.ProviderOpensPatient),
+                new ScenarioViewModel(Scenario.ProviderOpens10DifferentPatients),
+                new ScenarioViewModel(Scenario.ProviderOpens100DifferentPatients)
+            };
+
+        aresViewModel = new AresViewModel();
+        authViewModel = new AuthViewModel();
+        toastViewModel = new ToastViewModel();
+        IsMainWindowOpened = true;
     }
 
 
     [RelayCommand]
     public void RunScenario()
     {
-        if (SelectedPlugin == null)
-        {
-            MessageBox.Show("Please select a plugin", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
-        }
-
         if (SelectedScenario == null)
         {
             MessageBox.Show("Please select a scenario", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -43,31 +58,34 @@ internal partial class MainWindowViewModel : ObservableObject
         // Start the scenario
         Console.WriteLine("Scenario started");
         var messages = BuildMessages(SelectedScenario.Scenario);
-        int? pluginId = SelectedPlugin.Value.Key == 0 ? null : SelectedPlugin.Value.Key;
+
         foreach (var item in messages)
         {
-            AkkaSystem.Send(item, pluginId);
+            AkkaSystem.Send(item);
         }
     }
 
-    private IEnumerable<PatientContextChanged> BuildMessages(Scenario scenario)
+    private IEnumerable<object> BuildMessages(Scenario scenario)
     {
         switch (scenario)
         {
+            case Scenario.UserLoggingIn:
+                yield return new UserLoggingIn();
+                break;
             case Scenario.ProviderOpensPatient:
-                yield return new PatientContextChanged();
+                yield return new PatientOpenedInEMR();
                 break;
             case Scenario.ProviderOpens10DifferentPatients:
                 for(int i=0;i<10;i++)
                 {
-                    yield return new PatientContextChanged();
+                    yield return new PatientOpenedInEMR();
                 }
 
                 break;
             case Scenario.ProviderOpens100DifferentPatients:
                 for (int i = 0; i < 100; i++)
                 {
-                    yield return new PatientContextChanged();
+                    yield return new PatientOpenedInEMR();
                 }
 
                 break;
@@ -75,32 +93,52 @@ internal partial class MainWindowViewModel : ObservableObject
                 yield break;
         }
     }
+
+    internal void OnPatientOpened(PatientOpenedInEMR msg)
+    {
+        if (IsMainWindowOpened)
+        ToastViewModel.OnMessageProcessed(msg);
+    }
 }
 
-internal class DesignMainWindowViewModel
+internal partial class DesignMainWindowViewModel : ObservableObject
 {
-    public ObservableCollection<PluginViewModel> Plugins { get; internal set; }
+    [ObservableProperty]
+    private AuthViewModel authViewModel;
+
+    [ObservableProperty]
+    private AresViewModel aresViewModel;
+
+    [ObservableProperty]
+    private ToastViewModel toastViewModel;
+
     public DesignMainWindowViewModel()
     {
-        Plugins = new ObservableCollection<PluginViewModel>(new[]
+        this.authViewModel = new AuthViewModel()
         {
-            new PluginViewModel(1, "Plugin 1", false)
-            {
-                ProcessedMessagesCount = 2,
-                ProcessedMessages = new ObservableCollection<EventMessageViewModel>(new []
+            ProcessedMessagesCount = 2,
+            ProcessedMessages = new ObservableCollection<EventMessageViewModel>(new[]
                                     {
-                                        new EventMessageViewModel { Message = "m2" },
                                         new EventMessageViewModel { Message = "m1" }
                                     })
-            },
-            new PluginViewModel(2, "Plugin 2")
-            {
-                ProcessedMessagesCount = 1,
-                ProcessedMessages = new ObservableCollection<EventMessageViewModel>(new []
+        };
+
+        this.aresViewModel = new AresViewModel()
+        {
+            ProcessedMessagesCount = 2,
+            ProcessedMessages = new ObservableCollection<EventMessageViewModel>(new[]
+                                    {
+                                        new EventMessageViewModel { Message = "m3" }
+                                    })
+        };
+
+        this.toastViewModel = new ToastViewModel()
+        {
+            ProcessedMessagesCount = 1,
+            ProcessedMessages = new ObservableCollection<EventMessageViewModel>(new[]
                                     {
                                         new EventMessageViewModel { Message = "m2" }
                                     })
-            }
-        });
+        };
     }
 }

@@ -5,6 +5,7 @@ namespace WpfAkka.ViewModels;
 
 public enum Scenario
 {
+    UserLoggingIn,
     ProviderOpensPatient,
     ProviderOpens10DifferentPatients,
     ProviderOpens100DifferentPatients,
