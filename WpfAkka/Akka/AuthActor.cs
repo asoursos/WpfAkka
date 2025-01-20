@@ -13,29 +13,30 @@ internal class AuthActor : ReceiveActor
     public AuthActor(AuthViewModel viewModel)
     {
         _viewModel = viewModel;
-        Become(BecomeUnauthenticated);
+        Become(Unauthenticated);
     }
 
-    private void BecomeUnauthenticated()
+    private void Unauthenticated()
     {
         Receive<UserLoggingIn>(msg =>
         {
             // auth magic, login the user.
             Thread.Sleep(1000);
 
-            Become(BecomeAuthenticated);
+            Become(Authenticated);
             Context.Parent.Tell(new UserLoggedIn { Username = msg.Username });
             _viewModel.OnMessageProcessed(msg);
             _viewModel.OnUserLoggedIn(msg);
         });
     }
 
-    private void BecomeAuthenticated()
+    private void Authenticated()
     {
         Receive<UserLoggingOut>(msg =>
         {
             Thread.Sleep(1000);
 
+            Become(Unauthenticated);
             Context.Parent.Tell(new UserLoggedOut { Username= msg.Username });
             _viewModel.OnMessageProcessed(msg);
             _viewModel.OnUserLoggedOut(msg);
